@@ -11,7 +11,6 @@
 
 using CommunityToolkit.Mvvm.Input;
 using Dasync.Collections;
-using EDSDKLib;
 using LensAF.Properties;
 using LensAF.Util;
 using NINA.Core.Utility;

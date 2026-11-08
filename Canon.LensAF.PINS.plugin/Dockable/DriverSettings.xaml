@@ -40,32 +40,4 @@
         </Grid>
     </DataTemplate>
 
-    <DataTemplate x:Key="LensAF.NikonFocuser_FocuserSettings">
-        <Grid DataContext="{Binding}">
-            <StackPanel Orientation="Vertical">
-                <!--<StackPanel Orientation="Horizontal">
-                    <TextBlock
-                        Margin="0,0,10,0"
-                        Text="StepSize/Resolution"
-                        ToolTip="Recommended to be left at 1. Instead change the Autofocus step size" />
-                    <TextBox
-                        Width="100"
-                        Text="{Binding StepSize}"
-                        ToolTip="Recommended to be left at 1. Instead change the Autofocus step size" />
-                </StackPanel>-->
-                <ninactrl:CancellableButton
-                    Width="125"
-                    Height="40"
-                    Margin="0,5,0,0"
-                    HorizontalAlignment="Left"
-                    ButtonText="Calibrate Lens"
-                    CancelButtonImage="{StaticResource CancelSVG}"
-                    CancelCommand="{Binding CancelCalibrate}"
-                    CancelToolTip="Cancel calibration"
-                    Command="{Binding CalibrateLens}"
-                    ToolTip="Recommended to click after every focal length change." />
-            </StackPanel>
-        </Grid>
-    </DataTemplate>
-
 </ResourceDictionary>

@@ -16,7 +16,6 @@ using System.ComponentModel.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
-using EDSDKLib;
 using LensAF.Util;
 using Newtonsoft.Json;
 using NINA.Core.Model;
@@ -28,7 +27,7 @@ using NINA.Sequencer.Validations;
 namespace LensAF.SequenceItems
 {
     [ExportMetadata("Name", "Set Aperture")]
-    [ExportMetadata("Description", "Sets the aperture of the lens (canon / nikon)")]
+    [ExportMetadata("Description", "Sets the aperture of the lens (canon)")]
     [ExportMetadata("Icon", "CameraSVG")]
     [ExportMetadata("Category", "Lens")]
     [Export(typeof(ISequenceItem))]
@@ -97,11 +96,6 @@ namespace LensAF.SequenceItems
             {
                 return true;
             }
-            var nikon = Utility.GetNikonCamera(camera, false);
-            if (nikon != null)
-            {
-                return false;
-            }
             return false;
         }
 
@@ -116,18 +110,9 @@ namespace LensAF.SequenceItems
             if (cam != null)
             {
                 Logger.Info("Getting apertures for canon");
-                a = CameraInfo.GetAVs(Utility.GetCamera(camera, false));
+                a = CameraInfo.GetAVs(camera);
             }
-            else
-            {
-                Logger.Info("Getting apertures for nikon");
-                var nikon = Utility.GetNikonCamera(camera, false);
-                if (nikon != null)
-                {
-                    a = CameraInfo.GetAVs(nikon);
-                }
-            }
-
+            
             Apertures = a;
         }
 
@@ -170,11 +155,7 @@ namespace LensAF.SequenceItems
         {
             if (isCanon(camera))
             {
-                new CameraInfo(Utility.GetCamera(camera)).SetAperture(Utility.GetCamera(camera), SelectedAperture);
-            }
-            else
-            {
-                new CameraInfo(Utility.GetNikonCamera(camera)).SetAperture(Utility.GetNikonCamera(camera), SelectedAperture);
+                new CameraInfo(camera).SetAperture(camera, SelectedAperture);
             }
             return Task.CompletedTask;
         }

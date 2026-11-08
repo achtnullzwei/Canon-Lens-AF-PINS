@@ -10,7 +10,8 @@
 #endregion "copyright"
 
 using CommunityToolkit.Mvvm.Input;
-using EDSDKLib;
+using GPSDK;
+using static GPSDK.GPSDK;
 using LensAF.Properties;
 using LensAF.Util;
 using NINA.Core.Utility;
@@ -21,10 +22,12 @@ using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Navigation;
 using RelayCommand = CommunityToolkit.Mvvm.Input.RelayCommand;
+using System.Globalization;
 
 namespace LensAF
 {
@@ -79,6 +82,12 @@ namespace LensAF
         public int MaxIncrement { get; set; } = 10000;
 
         public int MaxStep { get; set; } = 10000;
+    
+        public bool CanSetMaxStep { get; set; } = false;
+
+        public bool CanReverse { get; set; } = false;
+
+        public bool Reverse { get; set; } = false;
 
         public bool TempCompAvailable { get; set; } = false;
 
@@ -188,22 +197,23 @@ namespace LensAF
 
         public async Task CalibrateCamera(CancellationToken ct)
         {
-            IntPtr cam = Utility.GetCamera(LensAF.Camera);
-            EDCamera camera = Utility.GetCanonCamera(LensAF.Camera);
-
             try
             {
                 LensAF.AddLensConfigIfNecessary(DisplayName);
 
-                camera.StartLiveView(new NINA.Equipment.Model.CaptureSequence());
+                // camera.StartLiveView(new NINA.Equipment.Model.CaptureSequence());
+                Utility.SetProperty(LensAF.Camera, "output", "TFT + PC");
                 IsMoving = true;
 
                 for (int i = 0; i < Settings.Default.CalibrationLargeSteps; i++)
                 {
-                    await DriveManualFocus((int)EDSDK.EvfDriveLens_Far3, ct);
+                    await DriveManualFocus("Far 3", ct);
                     ct.ThrowIfCancellationRequested();
                 }
-                await DriveManualFocus((int)EDSDK.EvfDriveLens_Near2, ct);
+
+                // Waiting for a bit to give enough time to settle the focuser
+                await Task.Delay(300, ct);
+                await DriveManualFocus("Near 2", ct);
                 ct.ThrowIfCancellationRequested();
 
                 Position = Settings.Default.FocusStopPosition;
@@ -217,13 +227,16 @@ namespace LensAF
             }
             catch
             {
-                camera.StopLiveView();
+                // camera.StopLiveView();
+                Utility.SetProperty(LensAF.Camera, "output", "TFT");
                 IsMoving = false;
                 throw;
             }
 
-            camera.StopLiveView();
+            // camera.StopLiveView();
+            Utility.SetProperty(LensAF.Camera, "output", "TFT");
             IsMoving = false;
+
         }
 
         public void Disconnect()
@@ -236,17 +249,16 @@ namespace LensAF
         {
         }
 
-        private async Task<bool> DriveManualFocus(int direction, CancellationToken? ct = null)
+        private async Task<bool> DriveManualFocus(string direction, CancellationToken? ct = null)
         {
             if (!Connected)
             {
                 throw new Exception("Lens driver not connected");
             }
             // Start driving the manual focus motor
-            IntPtr camera = Utility.GetCamera(LensAF.Camera);
-            uint error = EDSDK.EdsSendCommand(camera, EDSDK.CameraCommand_DriveLensEvf, direction);
+            GP_ERROR_CODE error = Utility.SetProperty(LensAF.Camera, "manualfocusdrive", direction);
 
-            if (error != EDSDK.EDS_ERR_OK)
+            if (error != GP_ERROR_CODE.GP_OK)
             {
                 Logger.Debug(Utility.ErrorCodeToString(error));
                 return false;
@@ -265,16 +277,19 @@ namespace LensAF
             }
 
             double diff = Position - position;
-            EDCamera camera = Utility.GetCanonCamera(LensAF.Camera);
+            GPCamera camera = Utility.GetCanonCamera(LensAF.Camera);
 
-            bool wasLiveviewEnabled = camera.LiveViewEnabled;
+            Utility.GetProperty(LensAF.Camera, "output", out var value);
+
+            bool wasLiveviewEnabled = (value == "TFT + PC");
             if (!wasLiveviewEnabled)
-                camera.StartLiveView(new NINA.Equipment.Model.CaptureSequence());
+                Utility.SetProperty(LensAF.Camera, "output", "TFT + PC");
+                wasLiveviewEnabled = true;
 
-            int direction = (int)EDSDK.EvfDriveLens_Near1;
+            string direction = "Near 1";
             if (diff < 0)
             {
-                direction = (int)EDSDK.EvfDriveLens_Far1;
+                direction = "Far 1";
                 diff = -diff;
             }
 
@@ -284,15 +299,15 @@ namespace LensAF
             {
                 ok = await DriveManualFocus(direction, ct);
                 diff -= StepSize;
-                Position -= (int)StepSize * (direction == EDSDK.EvfDriveLens_Far1 ? -1 : 1);
+                Position -= (int)StepSize * (direction == "Far 1" ? -1 : 1);
                 ct.ThrowIfCancellationRequested();
             }
 
             Position = position;
 
-            if (!wasLiveviewEnabled)
+            if (wasLiveviewEnabled)
             {
-                camera.StopLiveView();
+                Utility.SetProperty(LensAF.Camera, "output", "TFT");
             }
             return;
         }

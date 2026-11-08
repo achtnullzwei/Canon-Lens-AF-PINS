@@ -46,7 +46,7 @@ namespace LensAF.Dockable
                 .Children.First(tr => tr is ScaleTransform);
         }
 
-        public override UIElement Child
+        public new UIElement Child
         {
             get { return base.Child; }
             set

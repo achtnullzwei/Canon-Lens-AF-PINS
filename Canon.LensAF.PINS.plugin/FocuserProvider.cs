@@ -10,7 +10,6 @@
 #endregion "copyright"
 
 using LensAF.Util;
-using Nikon;
 using NINA.Core.Utility;
 using NINA.Core.Utility.Notification;
 using NINA.Equipment.Interfaces;
@@ -30,7 +29,6 @@ namespace LensAF
         {
             var result = new List<IFocuser>();
 
-            AddIfNotNull(result, GetNikonFocuser());
             AddIfNotNull(result, GetCanonFocuser());
 
             return result;
@@ -50,7 +48,7 @@ namespace LensAF
             {
                 try
                 {
-                    CameraInfo info = new CameraInfo(Utility.GetCamera(LensAF.Camera));
+                    CameraInfo info = new CameraInfo(LensAF.Camera);
                     return new CanonFocuser(info.LensName) { Name = $"Canon Lens Driver ({info.LensName})" };
                 }
                 catch (Exception ex)
@@ -58,25 +56,6 @@ namespace LensAF
                     Logger.Error(ex);
                 }
             }
-            return null;
-        }
-
-        private IFocuser GetNikonFocuser()
-        {
-            List<string> errors = Utility.ValidateNikon(LensAF.Camera);
-            if (errors.Count == 0)
-            {
-                try
-                {
-                    var info = new Util.CameraInfo(Utility.GetNikonCamera(LensAF.Camera));
-                    return new NikonFocuser(info.LensName) { Name = $"Nikon Lens Driver ({info.LensName})" };
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex);
-                }
-            }
-
             return null;
         }
     }

@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 namespace LensAF.SequenceItems
 {
     [ExportMetadata("Name", "Calibrate Lens")]
-    [ExportMetadata("Description", "Calibrates the lens (canon / nikon)")]
+    [ExportMetadata("Description", "Calibrates the lens (canon)")]
     [ExportMetadata("Icon", "CameraSVG")]
     [ExportMetadata("Category", "Lens")]
     [Export(typeof(ISequenceItem))]
@@ -70,7 +70,7 @@ namespace LensAF.SequenceItems
                 i.Add("Camera is not connected");
             }
             IDevice device = focuserMediator.GetDevice();
-            if (device as CanonFocuser is null && device as NikonFocuser is null)
+            if (device as CanonFocuser is null)
             {
                 i.Add("No camera lens connected for calibration");
             }
@@ -82,14 +82,9 @@ namespace LensAF.SequenceItems
         {
             IDevice device = focuserMediator.GetDevice();
             var canon = device as CanonFocuser;
-            var nikon = device as NikonFocuser;
             if (canon is not null) 
             {
                 await canon.CalibrateCamera(token);
-            }
-            else if (nikon is not null)
-            {
-                await nikon.CalibrateCamera(token);
             }
         }
     }
