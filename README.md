@@ -23,3 +23,7 @@ This plugin lets you use your Canon EFS lens as a focuser in PINS. The original 
 - In contrast to the original NINA plugin, no separate plugin settings are available.
 
 **Still work in progress ;-)**
+
+### Credits
+- Original Plugin for NINA. Copyright (c) by christian-photo: https://github.com/christian-photo/Camera-Lens-AF
+- Some code was incorporated and adapted from PINS (GPCamera, GPSDK). Copyright © 2025 Nico Trost <nico.trost57@gmail.com> and the PI.N.S. contributors: https://github.com/nitr57/pins
