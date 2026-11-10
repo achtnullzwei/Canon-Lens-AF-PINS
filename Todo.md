@@ -1,6 +1,7 @@
 ## TODOs
 - [ ] Fix Aperture Sequencer Item
-- [ ] Check with PINS Devs how custom settings can potentially be implemented. (Calibrate Button, Max Calibration Steps etc)
+- [ ] Check with PINS Devs how custom settings can potentially be implemented. (Calibrate Button, Max Calibration Steps, Initial Focus Point, etc)
+- [ ] deb package?
 
 ## Completed
 - [x] Headless Linux for PINS
