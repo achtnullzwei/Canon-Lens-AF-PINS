@@ -4,18 +4,17 @@
     Copyright © 2025 Christian Palm (christian@palm-family.de)
     This Source Code Form is subject to the terms of the Mozilla Public
     License, v. 2.0. If a copy of the MPL was not distributed with this
-    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+    file, You can obtain one at http://mozilla.org.
 */
 
 #endregion "copyright"
 
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.Input;
 using LensAF.Util;
 using Newtonsoft.Json;
 using NINA.Core.Model;
@@ -35,7 +34,6 @@ namespace LensAF.SequenceItems
     public class SetAperture : SequenceItem, IValidatable
     {
         private IList<string> issues = new List<string>();
-
         public IList<string> Issues
         {
             get => issues;
@@ -46,16 +44,8 @@ namespace LensAF.SequenceItems
             }
         }
 
-        private static List<string> apertures = new List<string>();
-        public List<string> Apertures
-        {
-            get => apertures;
-            set
-            {
-                apertures = value;
-                RaisePropertyChanged();
-            }
-        }
+        // Kept private since the UI no longer renders a dropdown list
+        private List<string> apertures = new List<string>();
 
         private string selectedAperture;
 
@@ -65,19 +55,17 @@ namespace LensAF.SequenceItems
             get => selectedAperture;
             set
             {
-                selectedAperture = value;
+                selectedAperture = value?.Trim();
                 RaisePropertyChanged();
+                Validate(); // Re-validate immediately when user types a new value
             }
         }
-
-        public RelayCommand<object> RefreshCommand { get; set; }
 
         private readonly ICameraMediator camera;
 
         [ImportingConstructor]
         public SetAperture(ICameraMediator camera)
         {
-            RefreshCommand = new RelayCommand<object>((o) => SetApertureList());
             this.camera = camera;
 
             camera.Connected += Camera_Connected;
@@ -89,42 +77,41 @@ namespace LensAF.SequenceItems
             }
         }
 
-        private bool isCanon(ICameraMediator camera)
+        private bool IsCanon()
         {
-            var cam = Utility.GetCanonCamera(camera, false);
-            if (cam != null)
-            {
-                return true;
-            }
-            return false;
+            return Utility.GetCanonCamera(camera, false) != null;
         }
 
         private void SetApertureList()
         {
             if (!camera.GetInfo().Connected)
             {
+                apertures = new List<string>();
                 return;
             }
-            List<string> a = new List<string>();
-            var cam = Utility.GetCanonCamera(camera, false);
-            if (cam != null)
+
+            if (IsCanon())
             {
                 Logger.Info("Getting apertures for canon");
-                a = CameraInfo.GetAVs(camera);
+                apertures = CameraInfo.GetAVs(camera) ?? new List<string>();
             }
-            
-            Apertures = a;
+            else
+            {
+                apertures = new List<string>();
+            }
         }
 
         private Task Camera_Connected(object arg1, EventArgs args)
         {
             SetApertureList();
+            Validate();
             return Task.CompletedTask;
         }
 
         private Task CameraDisconnected(object arg1, EventArgs args)
         {
-            Apertures = new List<string>();
+            apertures = new List<string>();
+            Validate();
             return Task.CompletedTask;
         }
 
@@ -136,27 +123,57 @@ namespace LensAF.SequenceItems
                 Name = Name,
                 Category = Category,
                 Description = Description,
-                Apertures = Apertures,
+                SelectedAperture = SelectedAperture // Preserves user input when duplicating step
             };
         }
 
         public bool Validate()
         {
-            List<string> i = new List<string>();
+            var i = new List<string>();
+
             if (!camera.GetInfo().Connected)
             {
-                i.Add("Camera is not connected");
+                i.Add("Camera is not connected.");
             }
+            else if (!IsCanon())
+            {
+                i.Add("Connected camera is not a supported Canon camera.");
+            }
+            else
+            {
+                // Ensure the list is populated if the lens was attached after connection
+                if (apertures == null || apertures.Count == 0)
+                {
+                    SetApertureList();
+                }
+
+                if (string.IsNullOrWhiteSpace(SelectedAperture))
+                {
+                    i.Add("No aperture value entered.");
+                }
+                else if (!apertures.Any(a => string.Equals(a, SelectedAperture, StringComparison.OrdinalIgnoreCase)))
+                {
+                    string available = apertures.Count > 0 ? string.Join(", ", apertures) : "none";
+                    i.Add($"Aperture '{SelectedAperture}' is not supported by this lens. Available: {available}");
+                }
+            }
+
             Issues = i;
             return i.Count == 0;
         }
 
         public override Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token)
         {
-            if (isCanon(camera))
+            // Re-run validation at execution time in case the lens changed or sequence was forced to run
+            if (!Validate())
             {
-                new CameraInfo(camera).SetAperture(camera, SelectedAperture);
+                throw new SequenceEntityFailedException(string.Join(" ", Issues));
             }
+
+            // Normalize casing/formatting to match the exact string returned by CameraInfo.GetAVs
+            string matchedAperture = apertures.First(a => string.Equals(a, SelectedAperture, StringComparison.OrdinalIgnoreCase));
+            new CameraInfo(camera).SetAperture(camera, matchedAperture);
+
             return Task.CompletedTask;
         }
 
