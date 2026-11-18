@@ -47,7 +47,7 @@ namespace LensAF.SequenceItems
         // Kept private since the UI no longer renders a dropdown list
         private List<string> apertures = new List<string>();
 
-        private string selectedAperture;
+        private string selectedAperture = string.Empty;
 
         [JsonProperty]
         public string SelectedAperture
@@ -55,9 +55,9 @@ namespace LensAF.SequenceItems
             get => selectedAperture;
             set
             {
-                selectedAperture = value?.Trim();
+                selectedAperture = value?.Trim() ?? string.Empty;
                 RaisePropertyChanged();
-                Validate(); // Re-validate immediately when user types a new value
+                Validate();
             }
         }
 
