@@ -8,7 +8,7 @@ This plugin lets you use your Canon EFS lens as a focuser in PINS. The original 
 This is only works on Raspberry Pi with PINS!
 
 ### How to install/update
-- Download the latest release .deb
+- Download the latest release .deb --> https://github.com/achtnullzwei/Canon-Lens-AF-PINS/releases
 - Open a Terminal or use SSH and cd into the folder where the downloaded .deb file resides.
 - Only install when PINS is idle.
 
