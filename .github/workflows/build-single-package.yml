@@ -68,11 +68,13 @@ jobs:
             libicu-dev \
             rsync
 
-      - name: Checkout repository
+      - name: Checkout PINS unstable
         uses: actions/checkout@v4
         with:
+          repository: acocalypso/pins
           lfs: ${{ inputs.package_key == 'pins' }}
           submodules: false
+          persist-credentials: false
 
       - name: Test Debian packaging helpers
         shell: bash
