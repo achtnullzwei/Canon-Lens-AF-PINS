@@ -50,7 +50,7 @@ namespace LensAF.SequenceItems
         private string selectedAperture = string.Empty;
 
         [JsonProperty]
-        public string SelectedAperture
+        public string Aperture
         {
             get => selectedAperture;
             set
@@ -123,7 +123,7 @@ namespace LensAF.SequenceItems
                 Name = Name,
                 Category = Category,
                 Description = Description,
-                SelectedAperture = SelectedAperture // Preserves user input when duplicating step
+                Aperture = Aperture // Preserves user input when duplicating step
             };
         }
 
@@ -147,14 +147,14 @@ namespace LensAF.SequenceItems
                     SetApertureList();
                 }
 
-                if (string.IsNullOrWhiteSpace(SelectedAperture))
+                if (string.IsNullOrWhiteSpace(Aperture))
                 {
                     i.Add("No aperture value entered.");
                 }
-                else if (!apertures.Any(a => string.Equals(a, SelectedAperture, StringComparison.OrdinalIgnoreCase)))
+                else if (!apertures.Any(a => string.Equals(a, Aperture, StringComparison.OrdinalIgnoreCase)))
                 {
                     string available = apertures.Count > 0 ? string.Join(", ", apertures) : "none";
-                    i.Add($"Aperture '{SelectedAperture}' is not supported by this lens. Available: {available}");
+                    i.Add($"Aperture '{Aperture}' is not supported by this lens. Available: {available}");
                 }
             }
 
@@ -171,7 +171,7 @@ namespace LensAF.SequenceItems
             }
 
             // Normalize casing/formatting to match the exact string returned by CameraInfo.GetAVs
-            string matchedAperture = apertures.First(a => string.Equals(a, SelectedAperture, StringComparison.OrdinalIgnoreCase));
+            string matchedAperture = apertures.First(a => string.Equals(a, Aperture, StringComparison.OrdinalIgnoreCase));
             new CameraInfo(camera).SetAperture(camera, matchedAperture);
 
             return Task.CompletedTask;
