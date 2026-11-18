@@ -6,5 +6,7 @@ on:
 jobs:
   build:
     uses: ./.github/workflows/build-single-package.yml
+    permissions:
+      contents: write
     with:
       package_key: plugin-canon-lensaf
